@@ -13,10 +13,8 @@ MonoBehaviour:
   m_Name: GameConfig
   m_EditorClassIdentifier: 
   bpm: 120
-  tileSpeed: 8
+  tileSpeed: 500
   laneCount: 4
-  totalLaneWidth: 7.2
-  spawnY: 7
   missY: -5.5
   hitWindowHalfHeight: 1.2
   initialPoolSize: 12

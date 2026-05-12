@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI.ProceduralImage;
 
@@ -16,18 +17,21 @@ public class Tile : MonoBehaviour
     private bool _isDead;      // consumed (hit or missed) — ignore further updates
 
     private ProceduralImage _image;
+    private RectTransform _rectTransform;
 
     // ── Unity lifecycle ──────────────────────────────────────────────
 
     private void Awake()
     {
         _image = GetComponent<ProceduralImage>();
+        _rectTransform = GetComponent<RectTransform>();
     }
 
     private void Update()
     {
         if (_isDead) return;
-        if (GameManager.Instance.CurrentState != GameManager.State.Playing) return;
+
+        if (GameManager.Instance.CurrentState != GameState.Playing) return;
 
         // Move down
         transform.Translate(Vector3.down * _speed * Time.deltaTime);
@@ -40,13 +44,14 @@ public class Tile : MonoBehaviour
     // ── Public API (called by TilePool and InputHandler) ─────────────
 
     /// TilePool calls this after positioning the tile.
-    public void Activate(float speed, float missY, float hitWindowHalfHeight)
+    public void Activate(float speed, float missY, float hitWindowHalfHeight, float tileWidth)
     {
         _speed = speed;
         _missY = missY;
         _hitWindowHalfHeight = hitWindowHalfHeight;
         _isDead = false;
-        _image.color = Color.white;
+        _image.color = Color.black;
+        _rectTransform.sizeDelta = new Vector2(tileWidth, 300);
         gameObject.SetActive(true);
     }
 
@@ -73,6 +78,18 @@ public class Tile : MonoBehaviour
         GameManager.Instance.RegisterHit(this);
 
         // White flash
+        StartCoroutine(HitFlash());
+    }
+
+    private IEnumerator HitFlash()
+    {
+        _image.color = Color.white;
+
+        yield return new WaitForSeconds(0.05f);
+        _image.color = Color.black;
+
+        yield return new WaitForSeconds(0.05f);
+        KillTile();
     }
 
     private void Miss()
@@ -81,8 +98,8 @@ public class Tile : MonoBehaviour
         GameManager.Instance.RegisterMiss(this);
     }
 
-    public void OnDeath()
+    public void KillTile()
     {
-        Destroy(this);
+        Destroy(gameObject);
     }
 }

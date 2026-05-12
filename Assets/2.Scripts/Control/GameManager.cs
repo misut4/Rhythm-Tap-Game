@@ -17,15 +17,13 @@ public class GameManager : MonoBehaviour
     public event Action<Tile> OnTileHit;        // tile that was hit
     public event Action<Tile> OnTileMissed;     // tile that was missed
     public event Action OnGameOver;
+    public event Action OnGameStart;
 
     // ── State ────────────────────────────────────────────────────────
-    public enum State { Idle, Playing, GameOver }
-    public State CurrentState { get; private set; } = State.Idle;
+    public GameState CurrentState { get; private set; } = GameState.Idle;
+    public ComboType CurrentComboType { get; private set; } = ComboType.None;
 
     public int Score { get; private set; }
-
-    // ── Constants ────────────────────────────────────────────────────
-    private const int HIT_POINTS = 100;
 
     // ── Unity lifecycle ──────────────────────────────────────────────
     private void Awake()
@@ -38,11 +36,13 @@ public class GameManager : MonoBehaviour
 
     public void StartGame()
     {
-        if (CurrentState == State.Playing) return;
+        if (CurrentState == GameState.Playing) return;
 
+        Debug.LogError("StartGame");
         Score = 0;
-        CurrentState = State.Playing;
+        CurrentState = GameState.Playing;
         OnScoreChanged?.Invoke(Score);
+        OnGameStart?.Invoke();
     }
 
     public void RestartGame()
@@ -54,9 +54,24 @@ public class GameManager : MonoBehaviour
     /// Called by Tile when successfully tapped.
     public void RegisterHit(Tile tile)
     {
-        if (CurrentState != State.Playing) return;
+        if (CurrentState != GameState.Playing) return;
 
-        Score += HIT_POINTS;
+        int hitPoints = 0;
+
+        switch (CurrentComboType)
+        {
+            case ComboType.Good:
+                hitPoints = Constants.GOOD_SCORE;
+                break;
+            case ComboType.Great:
+                hitPoints = Constants.GREAT_SCORE;
+                break;
+            case ComboType.Perfect:
+                hitPoints = Constants.PERFECT_SCORE;
+                break;
+        }
+
+        Score += hitPoints;
         OnScoreChanged?.Invoke(Score);
         OnTileHit?.Invoke(tile);
     }
@@ -64,7 +79,7 @@ public class GameManager : MonoBehaviour
     /// Called by Tile when it passes missY untapped.
     public void RegisterMiss(Tile tile)
     {
-        if (CurrentState != State.Playing) return;
+        if (CurrentState != GameState.Playing) return;
 
         OnTileMissed?.Invoke(tile);
         TriggerGameOver();
@@ -74,7 +89,15 @@ public class GameManager : MonoBehaviour
 
     private void TriggerGameOver()
     {
-        CurrentState = State.GameOver;
+        CurrentState = GameState.GameOver;
         OnGameOver?.Invoke();
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            StartGame();
+        }
     }
 }
