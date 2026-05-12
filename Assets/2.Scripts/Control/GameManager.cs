@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Singleton that owns game state, score, and broadcasts events.
@@ -9,8 +11,11 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    [Header("Config")]
-    public GameConfig config;
+    [Header("References")]
+    public AudioSource audioSource;
+    public CanvasScaler canvasScaler;
+
+    private GameConfig _config;
 
     // ── Events ───────────────────────────────────────────────────────
     public event Action<int> OnScoreChanged;   // new score
@@ -18,6 +23,8 @@ public class GameManager : MonoBehaviour
     public event Action<Tile> OnTileMissed;     // tile that was missed
     public event Action OnGameOver;
     public event Action OnGameStart;
+    public event Action OnTilePoolReady;
+    public event Action OnTileSpawnerReady;
 
     // ── State ────────────────────────────────────────────────────────
     public GameState CurrentState { get; private set; } = GameState.Idle;
@@ -30,6 +37,9 @@ public class GameManager : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+
+        InitGameConfig();
+
     }
 
     // ── Public API ───────────────────────────────────────────────────
@@ -43,11 +53,11 @@ public class GameManager : MonoBehaviour
         CurrentState = GameState.Playing;
         OnScoreChanged?.Invoke(Score);
         OnGameStart?.Invoke();
+        audioSource.Play();
     }
 
     public void RestartGame()
     {
-        // Let TileSpawner/Pool clean themselves up via OnGameStarted
         StartGame();
     }
 
@@ -93,11 +103,30 @@ public class GameManager : MonoBehaviour
         OnGameOver?.Invoke();
     }
 
-    private void Update()
+    public float GetAudioTime()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            StartGame();
-        }
+        return audioSource.clip.length;
+    }
+
+    public void SetTilePoolReady()
+    {
+        OnTilePoolReady?.Invoke();
+    }
+
+    public void SetTileSpawnerReady()
+    {
+        OnTileSpawnerReady?.Invoke();
+    }
+
+    private void InitGameConfig()
+    {
+        float scalingFactor = (float)Screen.width / canvasScaler.referenceResolution.x;
+
+        _config = new GameConfig(bpm: 148f, heightScalingFactor: scalingFactor, tileHeight: 300f, laneCount: 4, missY: -5.5f, initialPoolSize: 12);
+    }
+
+    public GameConfig GetGameConfig()
+    {
+        return _config;
     }
 }

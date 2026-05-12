@@ -10,23 +10,27 @@ using UnityEngine;
 /// </summary>
 public class TileSpawner : MonoBehaviour
 {
-    [Header("References")]
-    public GameConfig config;
-
     // ── State ────────────────────────────────────────────────────────
 
-    private double _nextBeatDspTime;    // dspTime of the next scheduled spawn
+    private float _nextBeatDspTime;    // dspTime of the next scheduled spawn
     private bool _isRunning;
+    private AudioSource _audioSource;
+    private GameConfig _config;
 
     // ── Unity lifecycle ──────────────────────────────────────────────
 
-    private void OnEnable()
+    private void Awake()
     {
+        _audioSource = GameManager.Instance.audioSource;
+        _config = GameManager.Instance.GetGameConfig();
+
         GameManager.Instance.OnGameStart += StartSpawning;
         GameManager.Instance.OnGameOver += StopSpawning;
+
+        GameManager.Instance.SetTileSpawnerReady();
     }
 
-    private void OnDisable()
+    private void OnDestroy()
     {
         if (GameManager.Instance == null) return;
         GameManager.Instance.OnGameStart -= StartSpawning;
@@ -38,13 +42,18 @@ public class TileSpawner : MonoBehaviour
     {
         if (!_isRunning) return;
 
-        // Keep spawning beats until we're caught up with current dsp time.
-        // This handles any frames where dspTime jumped over a beat boundary.
-        while (AudioSettings.dspTime >= _nextBeatDspTime)
+        if (_isRunning && _audioSource != null && _audioSource.clip != null)
         {
-            SpawnTile();
-            _nextBeatDspTime += config.BeatInterval;
+            float clipLength = _audioSource.clip.length;
+            float audioTime = _audioSource.time;
+
+            while (_nextBeatDspTime <= clipLength && audioTime >= _nextBeatDspTime)
+            {
+                SpawnTile();
+                _nextBeatDspTime += _config.beatInterval;
+            }
         }
+   
     }
 
     // ── Public API ───────────────────────────────────────────────────
@@ -53,9 +62,8 @@ public class TileSpawner : MonoBehaviour
     {
         _isRunning = true;
 
-        // Schedule first beat slightly ahead so the first tile isn't instant
-        _nextBeatDspTime = AudioSettings.dspTime + config.BeatInterval;
-    }
+        _nextBeatDspTime = _config.beatInterval;
+    } 
 
     public void StopSpawning()
     {

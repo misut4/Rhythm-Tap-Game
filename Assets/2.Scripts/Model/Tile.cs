@@ -1,4 +1,5 @@
 using System.Collections;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI.ProceduralImage;
 
@@ -13,7 +14,6 @@ public class Tile : MonoBehaviour
 
     private float _speed;
     private float _missY;
-    private float _hitWindowHalfHeight;
     private bool _isDead;      // consumed (hit or missed) — ignore further updates
 
     private ProceduralImage _image;
@@ -44,14 +44,13 @@ public class Tile : MonoBehaviour
     // ── Public API (called by TilePool and InputHandler) ─────────────
 
     /// TilePool calls this after positioning the tile.
-    public void Activate(float speed, float missY, float hitWindowHalfHeight, float tileWidth)
+    public void Activate(float speed, float missY, float tileWidth, float tileHeight)
     {
         _speed = speed;
         _missY = missY;
-        _hitWindowHalfHeight = hitWindowHalfHeight;
         _isDead = false;
         _image.color = Color.black;
-        _rectTransform.sizeDelta = new Vector2(tileWidth, 300);
+        _rectTransform.sizeDelta = new Vector2(tileWidth, tileHeight);
         gameObject.SetActive(true);
     }
 
@@ -77,19 +76,9 @@ public class Tile : MonoBehaviour
         _isDead = true;
         GameManager.Instance.RegisterHit(this);
 
-        // White flash
-        StartCoroutine(HitFlash());
-    }
-
-    private IEnumerator HitFlash()
-    {
-        _image.color = Color.white;
-
-        yield return new WaitForSeconds(0.05f);
-        _image.color = Color.black;
-
-        yield return new WaitForSeconds(0.05f);
-        KillTile();
+        _image.DOFade(0.5f, 0.1f).OnComplete(() => {
+            KillTile();
+        });
     }
 
     private void Miss()

@@ -4,15 +4,31 @@ using UnityEngine;
 
 public class MainGameView : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+
+    private bool _isTilePoolReady = false;
+    private bool _isTileSpawnerReady = false;
+
+    private void Awake()
     {
-        
+        GameManager.Instance.OnTilePoolReady += OnTilePoolReady;
+        GameManager.Instance.OnTileSpawnerReady += OnTileSpawnerReady;
+
+        StartCoroutine(StartGameCoroutine());
     }
 
-    // Update is called once per frame
-    void Update()
+    private void OnTilePoolReady()
     {
-        
+        _isTilePoolReady = true;
+    }
+
+    private void OnTileSpawnerReady()
+    {
+        _isTileSpawnerReady = true;
+    }
+
+    private IEnumerator StartGameCoroutine()
+    {
+        yield return new WaitUntil(() => _isTilePoolReady && _isTileSpawnerReady);
+        GameManager.Instance.StartGame();
     }
 }

@@ -10,11 +10,10 @@ public class TilePool : MonoBehaviour
 {
     public static TilePool Instance { get; private set; }
 
-    [Header("References")]
-    public GameConfig config;
     public Tile tilePrefab;
     public RectTransform tileParent;
     private ObjectPool<Tile> _pool;
+    private GameConfig _config;
     private int _lastLane = -1;
     private int _sameCount = 0;      // consecutive same-lane count
     // ── Unity lifecycle ──────────────────────────────────────────────
@@ -24,18 +23,22 @@ public class TilePool : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
 
+        _config = GameManager.Instance.GetGameConfig();
+
         _pool = new ObjectPool<Tile>(
             createFunc: () => CreateTile(),
             actionOnGet: (tile) => { tile.gameObject.SetActive(true); },
             actionOnRelease: (tile) => Release(tile),
             actionOnDestroy: (tile) => DestroyTile(tile),
             collectionCheck: true,
-            defaultCapacity: config.initialPoolSize,
-            maxSize: config.initialPoolSize
+            defaultCapacity: _config.initialPoolSize,
+            maxSize: _config.initialPoolSize
         );
 
         _lastLane = -1;
         _sameCount = 0;
+
+        GameManager.Instance.SetTilePoolReady();
     }
 
     private void OnDestroy()
@@ -47,10 +50,10 @@ public class TilePool : MonoBehaviour
         int lane = PickLane();
 
         Tile tile = _pool.Get();
-        float laneWidth = tileParent.sizeDelta.x / config.laneCount;
+        float laneWidth = tileParent.sizeDelta.x / _config.laneCount;
 
         tile.LaneIndex = lane;
-        tile.Activate(config.tileSpeed, config.missY, config.hitWindowHalfHeight, laneWidth);
+        tile.Activate(_config.tileSpeed, _config.missY, laneWidth, _config.tileHeight);
 
         // Position: lane X, spawn Y, keep Z at 0
         tile.transform.localPosition = new Vector3(
@@ -86,7 +89,7 @@ public class TilePool : MonoBehaviour
         if (_sameCount >= 2)
         {
             int newLane;
-            do { newLane = Random.Range(0, config.laneCount); }
+            do { newLane = Random.Range(0, _config.laneCount); }
             while (newLane == _lastLane);
 
             _lastLane = newLane;
@@ -94,7 +97,7 @@ public class TilePool : MonoBehaviour
             return newLane;
         }
 
-        int lane = Random.Range(0, config.laneCount);
+        int lane = Random.Range(0, _config.laneCount);
 
         if (lane == _lastLane) _sameCount++;
         else _sameCount = 1;
