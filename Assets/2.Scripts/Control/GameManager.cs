@@ -56,7 +56,7 @@ public class GameManager : MonoBehaviour
         OnScoreChanged?.Invoke(Score, ComboType.None);
         OnGameStart?.Invoke();
         audioSource.time = 0f;
-        audioSource.Play();
+        StartCoroutine(WaitForAudioStartDelay());
         StartCoroutine(StartElapsedTime());
     }
 
@@ -91,16 +91,27 @@ public class GameManager : MonoBehaviour
         OnScoreChanged?.Invoke(Score, CurrentComboType);
         OnTileHit?.Invoke(tile);
     }
-    
+
+    private IEnumerator WaitForAudioStartDelay()
+    {
+        yield return new WaitForSeconds(_config.audioStartDelay);
+        audioSource.Play();
+    }
+
     private ComboType CheckCombo()
     {
         ComboType comboType = ComboType.None;
 
-        if (elapsedTime < Constants.PERFECT_HIT_WINDOW) {
+        if (elapsedTime < Constants.PERFECT_HIT_WINDOW)
+        {
             comboType = ComboType.Perfect;
-        } else if (elapsedTime < Constants.GREAT_HIT_WINDOW) {
+        }
+        else if (elapsedTime < Constants.GREAT_HIT_WINDOW)
+        {
             comboType = ComboType.Great;
-        } else if (elapsedTime < Constants.GOOD_HIT_WINDOW) {
+        }
+        else if (elapsedTime < Constants.GOOD_HIT_WINDOW)
+        {
             comboType = ComboType.Good;
         }
 
@@ -124,14 +135,14 @@ public class GameManager : MonoBehaviour
         if (CurrentState != GameState.Playing) return;
 
         OnTileMissed?.Invoke(tile);
-        TriggerGameOver();
+        TriggerGameOver(GameState.GameOver);
     }
 
     // ── Internal ─────────────────────────────────────────────────────
 
-    private void TriggerGameOver()
+    public void TriggerGameOver(GameState gameState)
     {
-        CurrentState = GameState.GameOver;
+        CurrentState = gameState;
         audioSource.Stop();
         OnGameOver?.Invoke();
     }
@@ -153,7 +164,9 @@ public class GameManager : MonoBehaviour
         float bpm = 148f;
         float beatInterval = 60f / bpm;
         float tileSpeed = 300f * scalingFactor / beatInterval;
-        float audioStartDelay = (Screen.height - 300) / tileSpeed;
+        float audioStartDelay = (Screen.height - 300 * scalingFactor) / tileSpeed;
+
+        Debug.LogError("audioStartDelay: " + audioStartDelay);
 
         _config = new GameConfig(bpm: bpm, tileSpeed: tileSpeed, tileHeight: 300f, laneCount: 4, missY: -5.5f, initialPoolSize: 12, beatInterval: beatInterval, audioStartDelay: audioStartDelay);
     }

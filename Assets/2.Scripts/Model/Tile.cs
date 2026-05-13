@@ -82,13 +82,14 @@ public class Tile : MonoBehaviour
 
         // VIBRATE FEEDBACK
         MOST_HapticFeedback.Generate(MOST_HapticFeedback.HapticTypes.LightImpact);
-        
+
         // PLAY HIT EFFECT
         hitEffect.gameObject.SetActive(true);
         hitEffect.Play();
 
         // FADE OUT TILE
-        _image.DOFade(0f, hitEffect.main.duration).OnComplete(() => {
+        _image.DOFade(0f, hitEffect.main.duration).OnComplete(() =>
+        {
             KillTile();
         });
     }

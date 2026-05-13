@@ -85,24 +85,11 @@ public class TilePool : MonoBehaviour
     /// Pick a lane index with playability rules.
     private int PickLane()
     {
-        // If same lane appeared twice in a row, force a different lane
-        if (_sameCount >= 2)
-        {
-            int newLane;
-            do { newLane = Random.Range(0, _config.laneCount); }
-            while (newLane == _lastLane);
-
-            _lastLane = newLane;
-            _sameCount = 1;
-            return newLane;
-        }
-
-        int lane = Random.Range(0, _config.laneCount);
-
-        if (lane == _lastLane) _sameCount++;
-        else _sameCount = 1;
-
-        _lastLane = lane;
-        return lane;
-    }
+        int newLane;
+        do { newLane = Random.Range(0, _config.laneCount); }
+        while (newLane == _lastLane);
+        
+        _lastLane = newLane;
+        return newLane;
+    }   
 }

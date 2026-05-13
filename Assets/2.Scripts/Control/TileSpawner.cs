@@ -1,13 +1,15 @@
+using System.Collections;
 using UnityEngine;
 
 public class TileSpawner : MonoBehaviour
 {
     // ── State ────────────────────────────────────────────────────────
 
-    private float _nextBeatDspTime;    // dspTime of the next scheduled spawn
+    private float _elapsedTime;    // dspTime of the next scheduled spawn
     private bool _isRunning;
     private AudioSource _audioSource;
     private GameConfig _config;
+    private WaitForSeconds _wait;
 
     // ── Unity lifecycle ──────────────────────────────────────────────
 
@@ -15,6 +17,7 @@ public class TileSpawner : MonoBehaviour
     {
         _audioSource = GameManager.Instance.audioSource;
         _config = GameManager.Instance.GetGameConfig();
+        _wait = new WaitForSeconds(_config.beatInterval);
 
         GameManager.Instance.OnGameStart += StartSpawning;
         GameManager.Instance.OnGameOver += StopSpawning;
@@ -31,43 +34,30 @@ public class TileSpawner : MonoBehaviour
         GameManager.Instance.OnClearTiles -= ClearTiles;
     }
 
-
-    private void Update()
+    private IEnumerator SpawnTilesByInterval()
     {
-        if (!_isRunning) return;
-
-        if (_isRunning && _audioSource != null && _audioSource.clip != null)
+        while (_isRunning)
         {
+            yield return _wait;
             float clipLength = _audioSource.clip.length;
-            float audioTime = _audioSource.time;
-
-            if (_nextBeatDspTime <= clipLength && audioTime >= _nextBeatDspTime)
+            if (_elapsedTime <= clipLength)
             {
                 SpawnTile();
-                _nextBeatDspTime += _config.beatInterval;
-            }
-            else
-            {
-                // we won
+                _elapsedTime += Time.deltaTime;
             }
         }
-   
     }
-
-    // ── Public API ───────────────────────────────────────────────────
 
     public void StartSpawning()
     {
         _isRunning = true;
-    } 
+        StartCoroutine(SpawnTilesByInterval());
+    }
 
     public void StopSpawning()
     {
         _isRunning = false;
-        _nextBeatDspTime = _config.beatInterval;
     }
-
-    // ── Internal ─────────────────────────────────────────────────────
 
     private void SpawnTile()
     {

@@ -11,8 +11,6 @@ public class ScoreView : MonoBehaviour
     public TextMeshProUGUI txtCombo;
     public TextMeshProUGUI txtComboCounter;
 
-    public DOTweenAnimation doTweenAnimationComboCounter;
-
     private int _currentScore = 0;
     private ComboType _currentComboType = ComboType.None;
     private int _comboCounter = 0;
@@ -42,18 +40,18 @@ public class ScoreView : MonoBehaviour
         }
 
         // COMBO COUNTER
-        _currentComboType = comboType;
-
         if (_currentComboType == comboType) {
             _comboCounter++;
         } else {
             _comboCounter = 0;
         }
+        
+        _currentComboType = comboType;
+
 
         if (_comboCounter > 0) {
             txtComboCounter.gameObject.SetActive(true);
             txtComboCounter.text = $"x{_comboCounter}";
-            doTweenAnimationComboCounter.DOPlay();
         } else {
             txtComboCounter.gameObject.SetActive(false);
         }
