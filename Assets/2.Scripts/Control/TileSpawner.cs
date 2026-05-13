@@ -1,13 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Spawns tiles on a BPM grid using AudioSettings.dspTime for drift-free timing.
-///
-/// Spawn pattern rules (can be extended):
-///   - One tile per beat
-///   - Never the same lane more than 2 times in a row
-///   - Guarantees minimum hand distance for playability
-/// </summary>
 public class TileSpawner : MonoBehaviour
 {
     // ── State ────────────────────────────────────────────────────────
@@ -26,6 +18,7 @@ public class TileSpawner : MonoBehaviour
 
         GameManager.Instance.OnGameStart += StartSpawning;
         GameManager.Instance.OnGameOver += StopSpawning;
+        GameManager.Instance.OnClearTiles += ClearTiles;
 
         GameManager.Instance.SetTileSpawnerReady();
     }
@@ -35,6 +28,7 @@ public class TileSpawner : MonoBehaviour
         if (GameManager.Instance == null) return;
         GameManager.Instance.OnGameStart -= StartSpawning;
         GameManager.Instance.OnGameOver -= StopSpawning;
+        GameManager.Instance.OnClearTiles -= ClearTiles;
     }
 
 
@@ -47,10 +41,14 @@ public class TileSpawner : MonoBehaviour
             float clipLength = _audioSource.clip.length;
             float audioTime = _audioSource.time;
 
-            while (_nextBeatDspTime <= clipLength && audioTime >= _nextBeatDspTime)
+            if (_nextBeatDspTime <= clipLength && audioTime >= _nextBeatDspTime)
             {
                 SpawnTile();
                 _nextBeatDspTime += _config.beatInterval;
+            }
+            else
+            {
+                // we won
             }
         }
    
@@ -61,13 +59,12 @@ public class TileSpawner : MonoBehaviour
     public void StartSpawning()
     {
         _isRunning = true;
-
-        _nextBeatDspTime = _config.beatInterval;
     } 
 
     public void StopSpawning()
     {
         _isRunning = false;
+        _nextBeatDspTime = _config.beatInterval;
     }
 
     // ── Internal ─────────────────────────────────────────────────────
@@ -75,5 +72,13 @@ public class TileSpawner : MonoBehaviour
     private void SpawnTile()
     {
         TilePool.Instance.SpawnIn();
+    }
+
+    private void ClearTiles()
+    {
+        foreach (var tile in transform.GetComponentsInChildren<Tile>())
+        {
+            tile.KillTile();
+        }
     }
 }

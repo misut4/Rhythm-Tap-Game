@@ -18,19 +18,21 @@ public class GameManager : MonoBehaviour
     private GameConfig _config;
 
     // ── Events ───────────────────────────────────────────────────────
-    public event Action<int> OnScoreChanged;   // new score
+    public event Action<int, ComboType> OnScoreChanged;   // new score
     public event Action<Tile> OnTileHit;        // tile that was hit
     public event Action<Tile> OnTileMissed;     // tile that was missed
     public event Action OnGameOver;
     public event Action OnGameStart;
     public event Action OnTilePoolReady;
     public event Action OnTileSpawnerReady;
+    public event Action OnClearTiles;
 
     // ── State ────────────────────────────────────────────────────────
     public GameState CurrentState { get; private set; } = GameState.Idle;
     public ComboType CurrentComboType { get; private set; } = ComboType.None;
 
     public int Score { get; private set; }
+    private float elapsedTime = 0f;
 
     // ── Unity lifecycle ──────────────────────────────────────────────
     private void Awake()
@@ -48,12 +50,14 @@ public class GameManager : MonoBehaviour
     {
         if (CurrentState == GameState.Playing) return;
 
-        Debug.LogError("StartGame");
         Score = 0;
         CurrentState = GameState.Playing;
-        OnScoreChanged?.Invoke(Score);
+        OnClearTiles?.Invoke();
+        OnScoreChanged?.Invoke(Score, ComboType.None);
         OnGameStart?.Invoke();
+        audioSource.time = 0f;
         audioSource.Play();
+        StartCoroutine(StartElapsedTime());
     }
 
     public void RestartGame()
@@ -67,6 +71,8 @@ public class GameManager : MonoBehaviour
         if (CurrentState != GameState.Playing) return;
 
         int hitPoints = 0;
+
+        CurrentComboType = CheckCombo();
 
         switch (CurrentComboType)
         {
@@ -82,9 +88,35 @@ public class GameManager : MonoBehaviour
         }
 
         Score += hitPoints;
-        OnScoreChanged?.Invoke(Score);
+        OnScoreChanged?.Invoke(Score, CurrentComboType);
         OnTileHit?.Invoke(tile);
     }
+    
+    private ComboType CheckCombo()
+    {
+        ComboType comboType = ComboType.None;
+
+        if (elapsedTime < Constants.PERFECT_HIT_WINDOW) {
+            comboType = ComboType.Perfect;
+        } else if (elapsedTime < Constants.GREAT_HIT_WINDOW) {
+            comboType = ComboType.Great;
+        } else if (elapsedTime < Constants.GOOD_HIT_WINDOW) {
+            comboType = ComboType.Good;
+        }
+
+        elapsedTime = 0f;
+        return comboType;
+    }
+
+    private IEnumerator StartElapsedTime()
+    {
+        while (CurrentState == GameState.Playing)
+        {
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+    }
+
 
     /// Called by Tile when it passes missY untapped.
     public void RegisterMiss(Tile tile)
@@ -100,12 +132,8 @@ public class GameManager : MonoBehaviour
     private void TriggerGameOver()
     {
         CurrentState = GameState.GameOver;
+        audioSource.Stop();
         OnGameOver?.Invoke();
-    }
-
-    public float GetAudioTime()
-    {
-        return audioSource.clip.length;
     }
 
     public void SetTilePoolReady()
@@ -122,7 +150,12 @@ public class GameManager : MonoBehaviour
     {
         float scalingFactor = (float)Screen.width / canvasScaler.referenceResolution.x;
 
-        _config = new GameConfig(bpm: 148f, heightScalingFactor: scalingFactor, tileHeight: 300f, laneCount: 4, missY: -5.5f, initialPoolSize: 12);
+        float bpm = 148f;
+        float beatInterval = 60f / bpm;
+        float tileSpeed = 300f * scalingFactor / beatInterval;
+        float audioStartDelay = (Screen.height - 300) / tileSpeed;
+
+        _config = new GameConfig(bpm: bpm, tileSpeed: tileSpeed, tileHeight: 300f, laneCount: 4, missY: -5.5f, initialPoolSize: 12, beatInterval: beatInterval, audioStartDelay: audioStartDelay);
     }
 
     public GameConfig GetGameConfig()

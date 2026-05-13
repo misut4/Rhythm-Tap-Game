@@ -4,6 +4,7 @@ using UnityEngine.EventSystems;
 
 public class InputHandler : MonoBehaviour
 {
+    [Header("References")]
     private List<RaycastResult> _results = new List<RaycastResult>();
     private PointerEventData _ped;
 

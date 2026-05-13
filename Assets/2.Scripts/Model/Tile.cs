@@ -1,5 +1,6 @@
 using System.Collections;
 using DG.Tweening;
+using Solo.MOST_IN_ONE;
 using UnityEngine;
 using UnityEngine.UI.ProceduralImage;
 
@@ -11,6 +12,9 @@ public class Tile : MonoBehaviour
 {
     // Set by TilePool.Get()
     [HideInInspector] public int LaneIndex;
+
+    public ParticleSystem hitEffect;
+    public ParticleSystem missEffect;
 
     private float _speed;
     private float _missY;
@@ -76,7 +80,15 @@ public class Tile : MonoBehaviour
         _isDead = true;
         GameManager.Instance.RegisterHit(this);
 
-        _image.DOFade(0.5f, 0.1f).OnComplete(() => {
+        // VIBRATE FEEDBACK
+        MOST_HapticFeedback.Generate(MOST_HapticFeedback.HapticTypes.LightImpact);
+        
+        // PLAY HIT EFFECT
+        hitEffect.gameObject.SetActive(true);
+        hitEffect.Play();
+
+        // FADE OUT TILE
+        _image.DOFade(0f, hitEffect.main.duration).OnComplete(() => {
             KillTile();
         });
     }
@@ -84,6 +96,11 @@ public class Tile : MonoBehaviour
     private void Miss()
     {
         _isDead = true;
+
+        // PLAY MISS EFFECT
+        missEffect.gameObject.SetActive(true);
+        missEffect.Play();
+
         GameManager.Instance.RegisterMiss(this);
     }
 

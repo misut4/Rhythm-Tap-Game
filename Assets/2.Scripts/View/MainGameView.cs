@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class MainGameView : MonoBehaviour
 {
-
+    public ResultView resultView;
     private bool _isTilePoolReady = false;
     private bool _isTileSpawnerReady = false;
 
@@ -12,7 +12,7 @@ public class MainGameView : MonoBehaviour
     {
         GameManager.Instance.OnTilePoolReady += OnTilePoolReady;
         GameManager.Instance.OnTileSpawnerReady += OnTileSpawnerReady;
-
+        GameManager.Instance.OnGameOver += OnGameOver;
         StartCoroutine(StartGameCoroutine());
     }
 
@@ -24,6 +24,11 @@ public class MainGameView : MonoBehaviour
     private void OnTileSpawnerReady()
     {
         _isTileSpawnerReady = true;
+    }
+
+    private void OnGameOver()
+    {
+        resultView.ShowResult();
     }
 
     private IEnumerator StartGameCoroutine()
