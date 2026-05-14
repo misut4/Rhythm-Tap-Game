@@ -79,10 +79,6 @@ public class ResultView : MonoBehaviour
 
     private void CalculateGoldStars()
     {
-        _isLeftStarShown = GameManager.Instance.CurrentState == GameState.GameOver && GameManager.Instance.Score == 0;
-        _isCenterStarShown = GameManager.Instance.CurrentState == GameState.GameOver && GameManager.Instance.Score > 0;
-        _isRightStarShown = GameManager.Instance.CurrentState == GameState.Won;
-
         switch (GameManager.Instance.CurrentState)
         {
             case GameState.Won:

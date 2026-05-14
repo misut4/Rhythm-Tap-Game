@@ -33,8 +33,6 @@ public class InputHandler : MonoBehaviour
         }
     }
 
-    // ── Internal ────────────────────────────────────────────────────
-
     private void TryHitAt(Vector2 screenPos)
     {
         if (EventSystem.current == null) return;
@@ -49,7 +47,7 @@ public class InputHandler : MonoBehaviour
             if (tile != null)
             {
                 tile.TryHit();
-                return; // stop at the first tile hit (topmost in UI order)
+                return;
             }
         }
     }

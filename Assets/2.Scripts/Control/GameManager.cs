@@ -3,10 +3,6 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// Singleton that owns game state, score, and broadcasts events.
-/// Other systems (Spawner, UI, VFX) subscribe rather than polling.
-/// </summary>
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
@@ -17,10 +13,9 @@ public class GameManager : MonoBehaviour
 
     private GameConfig _config;
 
-    // ── Events ───────────────────────────────────────────────────────
-    public event Action<int, ComboType> OnScoreChanged;   // new score
-    public event Action<Tile> OnTileHit;        // tile that was hit
-    public event Action<Tile> OnTileMissed;     // tile that was missed
+    public event Action<int, ComboType> OnScoreChanged;
+    public event Action<Tile> OnTileHit;
+    public event Action<Tile> OnTileMissed;
     public event Action OnGameOver;
     public event Action OnGameStart;
     public event Action OnTilePoolReady;
@@ -32,9 +27,7 @@ public class GameManager : MonoBehaviour
     public ComboType CurrentComboType { get; private set; } = ComboType.None;
 
     public int Score { get; private set; }
-    private float elapsedTime = 0f;
 
-    // ── Unity lifecycle ──────────────────────────────────────────────
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -43,8 +36,6 @@ public class GameManager : MonoBehaviour
         InitGameConfig();
 
     }
-
-    // ── Public API ───────────────────────────────────────────────────
 
     public void StartGame()
     {
@@ -57,7 +48,6 @@ public class GameManager : MonoBehaviour
         OnGameStart?.Invoke();
         audioSource.time = 0f;
         StartCoroutine(WaitForAudioStartDelay());
-        StartCoroutine(StartElapsedTime());
     }
 
     public void RestartGame()
@@ -72,7 +62,7 @@ public class GameManager : MonoBehaviour
 
         int hitPoints = 0;
 
-        CurrentComboType = CheckCombo();
+        CurrentComboType = CheckCombo(tile);
 
         switch (CurrentComboType)
         {
@@ -98,36 +88,27 @@ public class GameManager : MonoBehaviour
         audioSource.Play();
     }
 
-    private ComboType CheckCombo()
+    private ComboType CheckCombo(Tile tile)
     {
         ComboType comboType = ComboType.None;
 
-        if (elapsedTime < Constants.PERFECT_HIT_WINDOW)
+        float tileY = tile.transform.localPosition.y;
+
+        if (Constants.GREAT_HIT_WINDOW <= tileY && tileY <= Constants.PERFECT_HIT_WINDOW)
         {
             comboType = ComboType.Perfect;
         }
-        else if (elapsedTime < Constants.GREAT_HIT_WINDOW)
+        else if (Constants.GOOD_HIT_WINDOW <= tileY && tileY <= Constants.GREAT_HIT_WINDOW)
         {
             comboType = ComboType.Great;
         }
-        else if (elapsedTime < Constants.GOOD_HIT_WINDOW)
+        else if (Constants.GOOD_HIT_WINDOW <= tileY)
         {
             comboType = ComboType.Good;
         }
 
-        elapsedTime = 0f;
         return comboType;
     }
-
-    private IEnumerator StartElapsedTime()
-    {
-        while (CurrentState == GameState.Playing)
-        {
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-    }
-
 
     /// Called by Tile when it passes missY untapped.
     public void RegisterMiss(Tile tile)
@@ -137,8 +118,6 @@ public class GameManager : MonoBehaviour
         OnTileMissed?.Invoke(tile);
         TriggerGameOver(GameState.GameOver);
     }
-
-    // ── Internal ─────────────────────────────────────────────────────
 
     public void TriggerGameOver(GameState gameState)
     {
@@ -165,8 +144,6 @@ public class GameManager : MonoBehaviour
         float beatInterval = 60f / bpm;
         float tileSpeed = 300f * scalingFactor / beatInterval;
         float audioStartDelay = (Screen.height - 300 * scalingFactor) / tileSpeed;
-
-        Debug.LogError("audioStartDelay: " + audioStartDelay);
 
         _config = new GameConfig(bpm: bpm, tileSpeed: tileSpeed, tileHeight: 300f, laneCount: 4, missY: -5.5f, initialPoolSize: 12, beatInterval: beatInterval, audioStartDelay: audioStartDelay);
     }

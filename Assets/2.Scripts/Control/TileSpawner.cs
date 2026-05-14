@@ -3,15 +3,11 @@ using UnityEngine;
 
 public class TileSpawner : MonoBehaviour
 {
-    // ── State ────────────────────────────────────────────────────────
-
-    private float _elapsedTime;    // dspTime of the next scheduled spawn
+    private float _elapsedTime;
     private bool _isRunning;
     private AudioSource _audioSource;
     private GameConfig _config;
     private WaitForSeconds _wait;
-
-    // ── Unity lifecycle ──────────────────────────────────────────────
 
     private void Awake()
     {
@@ -43,7 +39,14 @@ public class TileSpawner : MonoBehaviour
             if (_elapsedTime <= clipLength)
             {
                 SpawnTile();
-                _elapsedTime += Time.deltaTime;
+                _elapsedTime += _config.beatInterval;
+
+            }
+            else
+            {
+                StopSpawning();
+                _elapsedTime = 0f;
+                GameManager.Instance.TriggerGameOver(GameState.Won);
             }
         }
     }
@@ -66,9 +69,6 @@ public class TileSpawner : MonoBehaviour
 
     private void ClearTiles()
     {
-        foreach (var tile in transform.GetComponentsInChildren<Tile>())
-        {
-            tile.KillTile();
-        }
+        TilePool.Instance.ReleaseAll();
     }
 }

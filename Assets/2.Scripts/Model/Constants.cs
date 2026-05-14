@@ -12,9 +12,10 @@ public class Constants
     public static readonly string TAG_HIT_AREA = "HitArea";
 
     // SCORE
-    public static readonly float GOOD_HIT_WINDOW = 0.7f;
-    public static readonly float GREAT_HIT_WINDOW = 0.5f;
-    public static readonly float PERFECT_HIT_WINDOW = 0.3f;
+    public static readonly float GOOD_HIT_WINDOW = -1500f;
+    public static readonly float GREAT_HIT_WINDOW = -1400f;
+    public static readonly float PERFECT_HIT_WINDOW = -1240f;
+
 
     public static readonly int GOOD_SCORE = 100;
     public static readonly int GREAT_SCORE = 200;

@@ -1,16 +1,10 @@
-using System.Collections;
 using DG.Tweening;
 using Solo.MOST_IN_ONE;
 using UnityEngine;
 using UnityEngine.UI.ProceduralImage;
 
-/// <summary>
-/// Represents one falling tile.
-/// Moves downward, reports Hit or Miss to GameManager, then returns itself to the pool.
-/// </summary>
 public class Tile : MonoBehaviour
 {
-    // Set by TilePool.Get()
     [HideInInspector] public int LaneIndex;
 
     public ParticleSystem hitEffect;
@@ -18,12 +12,11 @@ public class Tile : MonoBehaviour
 
     private float _speed;
     private float _missY;
-    private bool _isDead;      // consumed (hit or missed) — ignore further updates
+    private bool _isDead;
 
     private ProceduralImage _image;
     private RectTransform _rectTransform;
 
-    // ── Unity lifecycle ──────────────────────────────────────────────
 
     private void Awake()
     {
@@ -45,9 +38,6 @@ public class Tile : MonoBehaviour
             Miss();
     }
 
-    // ── Public API (called by TilePool and InputHandler) ─────────────
-
-    /// TilePool calls this after positioning the tile.
     public void Activate(float speed, float missY, float tileWidth, float tileHeight)
     {
         _speed = speed;
@@ -58,22 +48,13 @@ public class Tile : MonoBehaviour
         gameObject.SetActive(true);
     }
 
-    /// InputHandler calls this when a tap lands on this tile.
-    /// Returns true if the hit was valid (within hit window + not already dead).
     public bool TryHit()
     {
         if (_isDead) return false;
 
-        // Optional: enforce a hit window so tapping too early does nothing.
-        // Remove this block if you want taps to work anywhere on screen.
-        // float tileY = transform.position.y;
-        // if (tileY > _hitWindowHalfHeight) return false;   // too early
-
         Hit();
         return true;
     }
-
-    // ── Internal ─────────────────────────────────────────────────────
 
     private void Hit()
     {
@@ -90,7 +71,7 @@ public class Tile : MonoBehaviour
         // FADE OUT TILE
         _image.DOFade(0f, hitEffect.main.duration).OnComplete(() =>
         {
-            KillTile();
+            Release();
         });
     }
 
@@ -105,8 +86,23 @@ public class Tile : MonoBehaviour
         GameManager.Instance.RegisterMiss(this);
     }
 
-    public void KillTile()
+    public void Release()
     {
-        Destroy(gameObject);
+        TilePool.Instance.Release(this);
+    }
+
+    public void OnReturnedToPool()
+    {
+        _image.DOKill();
+        if (hitEffect != null)
+        {
+            hitEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            hitEffect.gameObject.SetActive(false);
+        }
+        if (missEffect != null)
+        {
+            missEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            missEffect.gameObject.SetActive(false);
+        }
     }
 }

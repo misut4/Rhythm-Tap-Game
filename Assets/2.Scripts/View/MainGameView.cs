@@ -12,8 +12,13 @@ public class MainGameView : MonoBehaviour
     {
         GameManager.Instance.OnTilePoolReady += OnTilePoolReady;
         GameManager.Instance.OnTileSpawnerReady += OnTileSpawnerReady;
-        GameManager.Instance.OnGameOver += OnGameOver;
         StartCoroutine(StartGameCoroutine());
+    }
+
+    private void OnDestroy()
+    {
+        GameManager.Instance.OnTilePoolReady -= OnTilePoolReady;
+        GameManager.Instance.OnTileSpawnerReady -= OnTileSpawnerReady;
     }
 
     private void OnTilePoolReady()
@@ -24,11 +29,6 @@ public class MainGameView : MonoBehaviour
     private void OnTileSpawnerReady()
     {
         _isTileSpawnerReady = true;
-    }
-
-    private void OnGameOver()
-    {
-        resultView.ShowResult();
     }
 
     private IEnumerator StartGameCoroutine()

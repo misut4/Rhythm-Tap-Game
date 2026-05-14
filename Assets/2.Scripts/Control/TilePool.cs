@@ -1,11 +1,6 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 
-/// <summary>
-/// Simple object pool for Tile prefabs.
-/// Pre-warms on Awake, grows automatically if needed.
-/// </summary>
 public class TilePool : MonoBehaviour
 {
     public static TilePool Instance { get; private set; }
@@ -15,8 +10,6 @@ public class TilePool : MonoBehaviour
     private ObjectPool<Tile> _pool;
     private GameConfig _config;
     private int _lastLane = -1;
-    private int _sameCount = 0;      // consecutive same-lane count
-    // ── Unity lifecycle ──────────────────────────────────────────────
 
     private void Awake()
     {
@@ -28,7 +21,7 @@ public class TilePool : MonoBehaviour
         _pool = new ObjectPool<Tile>(
             createFunc: () => CreateTile(),
             actionOnGet: (tile) => { tile.gameObject.SetActive(true); },
-            actionOnRelease: (tile) => Release(tile),
+            actionOnRelease: OnReturnedToPool,
             actionOnDestroy: (tile) => DestroyTile(tile),
             collectionCheck: true,
             defaultCapacity: _config.initialPoolSize,
@@ -36,7 +29,6 @@ public class TilePool : MonoBehaviour
         );
 
         _lastLane = -1;
-        _sameCount = 0;
 
         GameManager.Instance.SetTilePoolReady();
     }
@@ -63,10 +55,25 @@ public class TilePool : MonoBehaviour
         );
     }
 
-    private void Release(Tile tile)
+    public void Release(Tile tile)
     {
-        tile.gameObject.SetActive(false);
+        if (tile == null) return;
         _pool.Release(tile);
+    }
+
+    public void ReleaseAll()
+    {
+        foreach (var tile in tileParent.GetComponentsInChildren<Tile>(true))
+        {
+            if (tile.gameObject.activeSelf)
+                Release(tile);
+        }
+    }
+
+    private void OnReturnedToPool(Tile tile)
+    {
+        tile.OnReturnedToPool();
+        tile.gameObject.SetActive(false);
     }
 
     private Tile CreateTile()
@@ -79,7 +86,7 @@ public class TilePool : MonoBehaviour
 
     private void DestroyTile(Tile tile)
     {
-        tile.KillTile();
+        Destroy(tile.gameObject);
     }
 
     /// Pick a lane index with playability rules.
@@ -88,8 +95,8 @@ public class TilePool : MonoBehaviour
         int newLane;
         do { newLane = Random.Range(0, _config.laneCount); }
         while (newLane == _lastLane);
-        
+
         _lastLane = newLane;
         return newLane;
-    }   
+    }
 }
