@@ -1,10 +1,12 @@
 # BEFORE
 
-## Texture setting
+## ISSUES FOUND
+
+### Texture setting
 
 ![Image](./Images/Before/texture_setting.png)
 
-## Particle System
+### Particle System
 
 - Max particles is set at 1000 is too high for a short effect
 - Start Size, Delay, Lifetime, Speed are using random between constants but both is min max is the same
@@ -15,11 +17,18 @@
 
 # AFTER
 
-## Texture setting
+### Texture setting
 
 ![Image](./Images/After/texture_setting.png)
 
-## Particle System
+- Change sprite mode to single
+- pixel per unit to 1
+- meshtype to full rect
+- extrude edges to 0
+- untick generate physics shape
+- change resize algo to bilinear
+
+### Particle System
 
 - Max particles should follow emission rate × duration with an addition for overhead
 - Start Size, Delay, Lifetime, Speed should be using constant if min = max
